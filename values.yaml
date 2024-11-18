@@ -1,0 +1,54 @@
+  replicaCount: 1
+
+#imagePullSecrets:
+#  - name: harbor-registry-secret
+
+
+rbac:
+  create: false
+  serviceAccount:
+    create: false
+    # allow HMS connects to AWS resources via IRSA, such as S3 and KMS.
+    annotations: asdsd
+
+image:
+  repository: "harbor.wildberries.ru/data-platform/data-platform/data-platform/rnd/rnd"
+  tag: "v0-0-14-release-1a7d10c1"
+#  tag: "latest"
+  pullPolicy: IfNotPresent
+env:
+  HIVE_DB_EXTERNAL: "true"
+  HIVE_DB_DRIVER: org.postgresql.Driver
+  HIVE_CONF_PARAMS: "hive.metastore.schema.verification:false;datanucleus.autoCreateSchema:false"
+  # either hardcoded here or get from Secrets Manager below
+  HIVE_WAREHOUSE_S3LOCATION: warehouse
+
+secretName: hms-conf
+secret:
+  HIVE_DB_USER: javax-jdo-option-ConnectionUserName
+  HIVE_DB_PASS: javax-jdo-option-ConnectionPassword
+  HIVE_DB_JDBC_URL: javax-jdo-option-ConnectionURL
+  S3_SECRET_KEY: fs-s3a-access-key
+  S3_ACCESS_KEY: fs-s3a-secret-key
+
+
+# optional: get sensative info from external secret store, such as AWS Secrets Manager
+# secretName: <EKS_SECRET_RESOURCE_NAME>
+# secret:
+  # HIVE_DB_USER: <SECRET_MANAGER_SECRET_KEY_FOR_USERNAME>
+  # HIVE_DB_PASS: <SECRET_MANAGER_SECRET_KEY_FOR_PASSWORD>
+service:
+  type: ClusterIP 
+resources:
+  limits:
+    cpu: 1
+    memory: 1000Mi
+  requests:
+    cpu: 400m
+    memory: 1000Mi
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
